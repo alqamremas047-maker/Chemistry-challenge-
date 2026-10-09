@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تحدي الكيمياء 🧪</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#101827;color:#fff;text-align:center;padding:20px}
+main{max-width:600px;margin:auto}
+h1{color:#7ee7d8}
+.card{background:#1d2a40;border-radius:20px;padding:22px;margin:18px 0}
+button{background:#63dbc9;color:#102032;border:0;border-radius:12px;padding:13px 18px;margin:7px;font-size:16px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.4}
+.small{color:#bac8dd;font-size:14px}
+#answers{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#answers button{margin:0}
+</style>
+</head>
+<body>
+<main>
+<h1>🧪 تحدي الكيمياء</h1>
+<p class="small">اكتشف أسرار الكيمياء، مرحلة بعد مرحلة!</p>
+<div class="card">
+<div id="progress">المرحلة 1 من 30</div>
+<h2 id="title">مختبر الألوان</h2>
+<p id="lesson">مؤشر الملفوف الأحمر يحتوي على أصباغ يتغير لونها حسب درجة الحموضة. في الوسط الحمضي يميل للأحمر، وفي الوسط القاعدي يميل للأخضر أو الأزرق.</p>
+<button id="start" onclick="startGame()">ابدأ التحدي 🎮</button>
+<div id="game" hidden>
+<h3 id="question"></h3>
+<div id="answers"></div>
+<p id="feedback"></p>
+<button id="next" hidden onclick="nextLevel()">المرحلة التالية ←</button>
+</div>
+<p id="timer" class="small"></p>
+<p id="score">⭐ النقاط: 0</p>
+</div>
+<p class="small">تعلّم، جرّب، واكتشف! 🔬</p>
+</main>
+<script>
+const levels=[
+{t:"مختبر الألوان",l:"مؤشر الملفوف الأحمر يتغير لونه حسب الحموضة. الحمض يجعله أحمر أو ورديًا، والقاعدة تجعله أزرق أو أخضر.",q:"ماذا يحدث للون المؤشر في وسط حمضي؟",a:["أحمر أو وردي","أخضر دائمًا","لا يتغير أبدًا","ذهبي"],c:0},
+{t:"صياد الذرات",l:"يتكون الماء من ذرتين هيدروجين وذرة أكسجين.",q:"ما الصيغة الصحيحة للماء؟",a:["CO₂","H₂O","O₂","NaCl"],c:1},
+{t:"موازنة المعادلات",l:"يجب أن يتساوى عدد ذرات كل عنصر قبل التفاعل وبعده.",q:"كم جزيئًا من H₂ نحتاج: 2H₂ + O₂ → 2H₂O؟",a:["1","2","3","4"],c:1},
+{t:"أسرار الذرة",l:"تحتوي النواة على البروتونات والنيوترونات، وتوجد الإلكترونات حولها.",q:"أي جسيم شحنته سالبة؟",a:["البروتون","النيوترون","الإلكترون","النواة"],c:2},
+{t:"مقياس الحموضة",l:"تكون المحاليل حمضية عادةً عندما يكون pH أقل من 7 عند 25 درجة مئوية.",q:"أي قيمة تدل على محلول حمضي؟",a:["pH = 2","pH = 7","pH = 10","pH = 14"],c:0},
+{t:"الجدول الدوري",l:"يرتب الجدول الدوري العناصر حسب العدد الذري.",q:"ما رمز الأكسجين؟",a:["Ox","O","Og","O₂"],c:1},
+{t:"رابطة كيميائية",l:"تتكون الرابطة الأيونية غالبًا من انتقال إلكترونات بين ذرات.",q:"ما نوع الرابطة في NaCl؟",a:["أيونية","فلزية","هيدروجينية فقط","لا توجد رابطة"],c:0},
+{t:"غازات حولنا",l:"يحتاج الاحتراق غالبًا إلى وقود وأكسجين ومصدر حرارة.",q:"أي غاز يدعم الاحتراق؟",a:["النيتروجين","الأكسجين","الهيليوم","الأرجون"],c:1},
+{t:"فصل المخاليط",l:"يمكن فصل الرمل عن الماء بالترشيح.",q:"ما الطريقة المناسبة لفصل الرمل عن الماء؟",a:["الترشيح","التجميد فقط","المغنطة دائمًا","لا يمكن فصلهما"],c:0},
+{t:"بطارية صغيرة",l:"تحول البطارية الطاقة الكيميائية إلى طاقة كهربائية.",q:"ما الطاقة التي تنتجها البطارية؟",a:["صوتية فقط","كهربائية","نووية","ضوئية فقط"],c:1},
+{t:"كاشف النشا",l:"يعطي اليود لونًا أزرق داكنًا أو أسود مزرقًا مع النشا.",q:"أي مادة تكشف عن النشا؟",a:["محلول اليود","الماء النقي","الملح وحده","السكر"],c:0},
+{t:"حالة المادة",l:"تتحرك جسيمات الغاز بحرية أكبر ومتباعدة أكثر من جسيمات الصلب.",q:"أي حالة لها شكل وحجم غير ثابتين؟",a:["الصلبة","السائلة","الغازية","كلها ثابتة"],c:2},
+{t:"الفلزات",l:"تتميز كثير من الفلزات بتوصيل الحرارة والكهرباء.",q:"أي مما يلي فلز؟",a:["النحاس","الأكسجين","الكبريت","الكلور"],c:0},
+{t:"سرعة التفاعل",l:"قد تزداد سرعة التفاعل بارتفاع درجة الحرارة.",q:"ماذا يحدث غالبًا عند تسخين التفاعل؟",a:["تزداد سرعته","يتوقف دائمًا","تختفي الذرات","لا يمكن أن يتغير"],c:0},
+{t:"المحفز",l:"يغير المحفز سرعة التفاعل دون أن يُستهلك نهائيًا فيه.",q:"ما وظيفة المحفز؟",a:["تغيير سرعة التفاعل","خلق ذرات جديدة","إلغاء حفظ الكتلة","أن يكون دائمًا وقودًا"],c:0},
+{t:"حفظ الكتلة",l:"في التفاعل الكيميائي المعتاد، تبقى كتلة المواد محفوظة في نظام مغلق.",q:"ماذا يحدث للكتلة الكلية في نظام مغلق؟",a:["تُحفظ","تتضاعف دائمًا","تصبح صفرًا","تختفي"],c:0},
+{t:"المحاليل",l:"المذاب هو المادة التي تذوب في المذيب.",q:"في الماء المالح، ما المذاب؟",a:["الملح","الماء","الكأس","الهواء"],c:0},
+{t:"المعايرة",l:"تساعد المعايرة على تحديد تركيز محلول مجهول باستخدام محلول معلوم التركيز.",q:"ما الهدف من المعايرة؟",a:["تحديد التركيز","قياس الطول","صنع عنصر جديد","قياس الكتلة فقط"],c:0},
+{t:"الأكسدة",l:"الأكسدة هي فقد الإلكترونات، والاختزال هو اكتسابها.",q:"ماذا تعني الأكسدة إلكترونيًا؟",a:["فقد الإلكترونات","اكتساب الإلكترونات","اكتساب النيوترونات","فقد البروتونات دائمًا"],c:0},
+{t:"الكربون",l:"للكربون قدرة كبيرة على تكوين روابط تساهمية مع عناصر مختلفة.",q:"ما رمز الكربون؟",a:["Ca","C","Co","Cr"],c:1},
+{t:"تراكيب لويس",l:"تمثل تراكيب لويس إلكترونات التكافؤ بالنقاط.",q:"كم إلكترون تكافؤ للكربون؟",a:["2","4","6","8"],c:1},
+{t:"المجموعات الوظيفية",l:"تساعد المجموعة الوظيفية على تحديد خواص المركب العضوي وتفاعلاته.",q:"ما المجموعة الوظيفية في الكحولات؟",a:["OH","CO₂","Na","Cl₂"],c:0},
+{t:"الكيمياء والصدأ",l:"صدأ الحديد ينتج من تفاعله مع الأكسجين بوجود الرطوبة.",q:"ما الذي يساعد على صدأ الحديد؟",a:["الأكسجين والرطوبة","الهيليوم الجاف","الضوء وحده دائمًا","النيتروجين وحده"],c:0},
+{t:"الروابط التساهمية",l:"تتشارك الذرات بالإلكترونات في الرابطة التساهمية.",q:"ماذا تفعل الذرات في الرابطة التساهمية؟",a:["تتشارك بالإلكترونات","تفقد نواتها","تختفي","تتبادل النيوترونات"],c:0},
+{t:"الكيمياء الخضراء",l:"تهدف الكيمياء الخضراء إلى تقليل النفايات والمواد الخطرة.",q:"أي خيار أكثر استدامة؟",a:["تقليل النفايات","زيادة المذيبات الخطرة","رمي المواد في الأنهار","إهدار الطاقة"],c:0},
+{t:"ألوان اللهب",l:"تعطي بعض أيونات الفلزات ألوانًا مميزة في اختبار اللهب.",q:"أي عنصر يعطي عادةً لهبًا أصفر؟",a:["الصوديوم","النحاس","الليثيوم","البوتاسيوم"],c:0},
+{t:"الكثافة",l:"الكثافة تساوي الكتلة مقسومة على الحجم.",q:"كيف نحسب الكثافة؟",a:["الكتلة ÷ الحجم","الحجم ÷ الكتلة","الكتلة + الحجم","الكتلة × الزمن"],c:0},
+{t:"الأحماض والقواعد",l:"قد يتفاعل الحمض مع القاعدة ليكوّن ملحًا وماءً.",q:"ما الناتج الشائع للتعادل بين حمض وقاعدة؟",a:["ملح وماء","أكسجين فقط","حديد","كربون فقط"],c:0},
+{t:"لغز العناصر",l:"العدد الذري يساوي عدد البروتونات في نواة الذرة.",q:"ذرة عددها الذري 8؛ كم بروتونًا فيها؟",a:["6","8","10","16"],c:1},
+{t:"تحدي العالم",l:"الكيمياء تدرس المادة وخواصها وتغيراتها.",q:"ما الذي تدرسه الكيمياء أساسًا؟",a:["المادة وتغيراتها","الكواكب فقط","اللغة فقط","التاريخ فقط"],c:0}
+];
+let level=0,score=0,done=false;
+const saved=JSON.parse(localStorage.getItem("chemChallenge")||"{}");
+level=Math.min(saved.level||0,29);score=saved.score||0;
+function save(){localStorage.setItem("chemChallenge",JSON.stringify({level,score}));}
+function render(){
+document.getElementById("progress").textContent=`المرحلة ${level+1} من 30`;
+document.getElementById("title").textContent=levels[level].t;
+document.getElementById("lesson").textContent=levels[level].l;
+document.getElementById("score").textContent="⭐ النقاط: "+score;
+document.getElementById("start").hidden=false;
+document.getElementById("game").hidden=true;
+document.getElementById("timer").textContent="";
+done=false;
+}
+function startGame(){
+document.getElementById("start").hidden=true;
+document.getElementById("game").hidden=false;
+document.getElementById("question").textContent=levels[level].q;
+document.getElementById("feedback").textContent="";
+document.getElementById("next").hidden=true;
+const box=document.getElementById("answers");box.innerHTML="";
+levels[level].a.forEach((a,i)=>{
+const b=document.createElement("button");b.textContent=a;b.onclick=()=>answer(i);box.appendChild(b);
+});
+}
+function answer(i){
+if(done)return;done=true;
+const l=levels[level];
+document.querySelectorAll("#answers button").forEach((b,j)=>{b.disabled=true;if(j===l.c)b.style.background="#69d391";if(j===i&&i!==l.c)b.style.background="#ff8e8e";});
+if(i===l.c){score+=10;document.getElementById("feedback").textContent="أحسنت! إجابة صحيحة 🎉 +10 نقاط";}
+else document.getElementById("feedback").textContent="مش مشكلة! الإجابة الصحيحة: "+l.a[l.c];
+document.getElementById("score").textContent="⭐ النقاط: "+score;
+document.getElementById("next").hidden=false;save();
+}
+function nextLevel(){
+if(level<29){level++;save();render();}
+else{document.getElementById("title").textContent="🎉 أنهيت التحدي!";document.getElementById("lesson").textContent="رائع! حصلت على "+score+" نقطة.";document.getElementById("game").hidden=true;document.getElementById("start").hidden=true;}
+}
+render();
+</script>
+</body>
+  </html>
+  
